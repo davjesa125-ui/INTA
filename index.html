@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>INTA: La Semilla del Sur (1939-1956)</title>
+<style>
+  :root{
+    --terracota:#b5542a;
+    --terracota-dark:#7a3417;
+    --ocre:#c99a3d;
+    --verde-monte:#3f5a34;
+    --blanco-algodon:#f2ead8;
+    --zinc:#8b8f8a;
+    --tinta:#241a12;
+    --crema:#efe3c8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif; color:var(--crema);}
+  #app{position:fixed; inset:0;}
+  canvas{display:block; touch-action:none;}
+
+  /* ---------- Pantalla de inicio ---------- */
+  #startScreen{
+    position:fixed; inset:0; z-index:50;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(201,154,61,0.25), transparent 60%),
+      linear-gradient(180deg, #3a2412 0%, var(--tinta) 55%, #150e08 100%);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .startCard{
+    max-width:560px; width:100%;
+    background:linear-gradient(180deg, rgba(242,234,216,0.06), rgba(242,234,216,0.02));
+    border:1px solid rgba(201,154,61,0.4);
+    border-radius:4px;
+    padding:32px 28px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6), inset 0 0 40px rgba(181,84,42,0.08);
+  }
+  .eyebrow{
+    letter-spacing:0.28em; text-transform:uppercase; font-size:11px;
+    color:var(--ocre); font-family: 'Courier New', monospace; margin-bottom:10px;
+  }
+  h1.title{
+    font-size:clamp(28px,6vw,42px); margin:0 0 6px; color:var(--blanco-algodon);
+    font-weight:700; letter-spacing:0.01em; line-height:1.1;
+    text-shadow:0 2px 12px rgba(0,0,0,0.6);
+  }
+  .subtitle{ color:var(--ocre); font-size:15px; font-style:italic; margin-bottom:20px;}
+  .divider{width:60px; height:2px; background:var(--terracota); margin:18px auto; opacity:0.8;}
+  .lugar{font-size:13px; line-height:1.6; color:var(--crema); opacity:0.85; margin-bottom:18px;}
+  #authorField{margin:18px 0;}
+  #authorField label{display:block; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ocre); margin-bottom:6px;}
+  #authorInput{
+    width:100%; padding:10px 12px; border-radius:2px; border:1px solid rgba(201,154,61,0.5);
+    background:rgba(0,0,0,0.3); color:var(--crema); font-family:inherit; font-size:15px; text-align:center;
+  }
+  #authorInput:focus{outline:none; border-color:var(--terracota);}
+  #startBtn{
+    margin-top:8px; padding:14px 36px; border:none; border-radius:2px; cursor:pointer;
+    background:var(--terracota); color:var(--blanco-algodon); font-family:inherit;
+    font-size:16px; letter-spacing:0.06em; font-weight:700; text-transform:uppercase;
+    box-shadow:0 8px 20px rgba(181,84,42,0.35);
+  }
+  #startBtn:active{transform:translateY(1px);}
+  .howto{margin-top:18px; font-size:12px; color:var(--crema); opacity:0.6; line-height:1.7;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed; inset:0; z-index:20; pointer-events:none; display:none;}
+  #hud.active{display:block;}
+  #topbar{
+    position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between;
+    align-items:flex-start; padding:12px 14px; gap:10px;
+    background:linear-gradient(180deg, rgba(20,13,8,0.65), transparent);
+  }
+  .badge{
+    background:rgba(20,13,8,0.55); border:1px solid rgba(201,154,61,0.4);
+    padding:7px 12px; border-radius:2px; font-size:12px; letter-spacing:0.03em;
+  }
+  .badge b{color:var(--ocre);}
+  #crosshair{
+    position:absolute; top:50%; left:50%; width:6px; height:6px; margin:-3px 0 0 -3px;
+    border-radius:50%; background:rgba(242,234,216,0.85); box-shadow:0 0 4px rgba(0,0,0,0.6);
+  }
+  #interactHint{
+    position:absolute; bottom:26%; left:50%; transform:translateX(-50%);
+    background:rgba(20,13,8,0.7); border:1px solid var(--ocre); padding:8px 16px; border-radius:2px;
+    font-size:13px; display:none; letter-spacing:0.03em;
+  }
+  #interactBtn{
+    position:fixed; left:50%; bottom:19%; transform:translateX(-50%); z-index:22;
+    pointer-events:auto; display:none; align-items:center; gap:8px;
+    padding:14px 26px; border-radius:30px; border:2px solid var(--ocre);
+    background:linear-gradient(180deg, var(--terracota), var(--terracota-dark));
+    color:var(--blanco-algodon); font-family:inherit; font-size:15px; font-weight:700;
+    letter-spacing:0.03em; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    animation:interactPulse 1.6s ease-in-out infinite;
+  }
+  #interactBtn:active{transform:translateX(-50%) scale(0.96);}
+  @keyframes interactPulse{
+    0%,100%{ box-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 0 0 rgba(201,154,61,0.5); }
+    50%{ box-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 0 10px rgba(201,154,61,0); }
+  }
+
+  /* ---------- panel de punto de interés ---------- */
+  #poiPanel{
+    position:fixed; z-index:40; inset:auto 0 0 0; pointer-events:auto;
+    display:none; justify-content:center; padding:16px;
+  }
+  .poiCard{
+    max-width:600px; width:100%; background:linear-gradient(180deg, #241a12, #180f09);
+    border-top:3px solid var(--terracota); border-radius:6px 6px 0 0;
+    padding:20px 22px 22px; box-shadow:0 -10px 40px rgba(0,0,0,0.6);
+    max-height:62vh; overflow-y:auto;
+  }
+  .poiCard h2{margin:0 0 4px; font-size:20px; color:var(--blanco-algodon);}
+  .poiCard .yr{font-size:12px; color:var(--ocre); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:12px; display:block;}
+  .poiCard p{font-size:14.5px; line-height:1.65; color:var(--crema); margin:0 0 12px;}
+  .poiCard .fuente{font-size:11.5px; color:var(--ocre); font-style:italic; opacity:0.85; border-top:1px solid rgba(201,154,61,0.25); padding-top:10px;}
+  .closeBtn{
+    margin-top:14px; width:100%; padding:11px; border:1px solid var(--ocre); background:transparent;
+    color:var(--crema); border-radius:2px; font-family:inherit; font-size:13px; letter-spacing:0.06em;
+    text-transform:uppercase; cursor:pointer;
+  }
+
+  /* ---------- Controles móviles ---------- */
+  #mobileControls{position:fixed; inset:0; z-index:15; pointer-events:none; display:none;}
+  #mobileControls.active{display:block;}
+  #lookLayer{position:absolute; inset:0; right:0; pointer-events:auto;}
+  .dpad{
+    position:absolute; left:14px; bottom:18px; width:150px; height:150px; pointer-events:auto;
+    display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:4px;
+  }
+  .dbtn{
+    background:rgba(20,13,8,0.55); border:1px solid rgba(201,154,61,0.5); border-radius:6px;
+    display:flex; align-items:center; justify-content:center; color:var(--crema); font-size:18px;
+    -webkit-user-select:none;
+  }
+  .dbtn.active{background:rgba(181,84,42,0.7);}
+  #dUp{grid-column:2; grid-row:1;}
+  #dLeft{grid-column:1; grid-row:2;}
+  #dDown{grid-column:2; grid-row:2; background:rgba(20,13,8,0.25); border:none;}
+  #dRight{grid-column:3; grid-row:2;}
+  #dDownReal{grid-column:2; grid-row:3;}
+
+  #questBtnMobile{
+    position:absolute; right:16px; bottom:18px; padding:10px 14px; border-radius:20px;
+    background:rgba(20,13,8,0.65); border:1px solid var(--ocre); pointer-events:auto; font-size:12px;
+    color:var(--crema);
+  }
+
+  #desktopHint{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); font-size:11px; color:rgba(242,234,216,0.55); letter-spacing:0.03em;}
+  #questBtnDesktop{
+    position:absolute; top:12px; right:12px; padding:9px 16px; border-radius:2px; pointer-events:auto;
+    background:rgba(20,13,8,0.6); border:1px solid var(--ocre); color:var(--crema); font-family:inherit; font-size:12px; cursor:pointer;
+    letter-spacing:0.05em; text-transform:uppercase;
+  }
+  #soundToggleBtn{
+    position:absolute; top:12px; right:172px; pointer-events:auto; background:rgba(20,13,8,0.55);
+    border:1px solid rgba(201,154,61,0.4); color:var(--crema); font-size:17px; width:38px; height:38px;
+    border-radius:50%; cursor:pointer; z-index:5;
+  }
+
+  /* ---------- Quiz ---------- */
+  #quizOverlay{
+    position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+    background:rgba(10,7,4,0.86); padding:16px;
+  }
+  .quizCard{
+    max-width:520px; width:100%; background:linear-gradient(180deg,#241a12,#160e08);
+    border:1px solid rgba(201,154,61,0.4); border-radius:6px; padding:24px 22px; max-height:88vh; overflow-y:auto;
+  }
+  .quizProg{font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ocre); margin-bottom:10px;}
+  .quizQ{font-size:17px; line-height:1.5; color:var(--blanco-algodon); margin-bottom:18px;}
+  .quizOpt{
+    display:block; width:100%; text-align:left; padding:12px 14px; margin-bottom:10px; border-radius:3px;
+    border:1px solid rgba(201,154,61,0.4); background:rgba(242,234,216,0.03); color:var(--crema);
+    font-family:inherit; font-size:14px; cursor:pointer; line-height:1.4;
+  }
+  .quizOpt.correct{border-color:#6f9e5a; background:rgba(111,158,90,0.18);}
+  .quizOpt.wrong{border-color:#a5473a; background:rgba(165,71,58,0.18);}
+  .quizJust{font-size:13px; line-height:1.6; color:var(--ocre); margin:14px 0 4px; display:none; font-style:italic;}
+  .quizNextBtn{
+    margin-top:12px; width:100%; padding:12px; border:none; border-radius:2px; cursor:pointer;
+    background:var(--terracota); color:var(--blanco-algodon); font-family:inherit; font-size:14px;
+    letter-spacing:0.05em; text-transform:uppercase; display:none;
+  }
+  #quizFinal{display:none; text-align:center;}
+  #quizFinal .score{font-size:44px; color:var(--ocre); margin:6px 0;}
+  #quizFinal p{font-size:14px; line-height:1.6; color:var(--crema); opacity:0.85;}
+  #quizCloseX{position:absolute; top:10px; right:14px; background:none; border:none; color:var(--crema); font-size:20px; cursor:pointer; opacity:0.6;}
+
+  #progressBadge{position:absolute; top:12px; left:12px;}
+
+  /* ---------- Desafío de puerta ---------- */
+  #doorOverlay{
+    position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+    background:rgba(10,7,4,0.86); padding:16px;
+  }
+  #doorOverlay .quizProg{color:#c9a05a;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ PANTALLA DE INICIO ============ -->
+  <div id="startScreen">
+    <div class="startCard">
+      <div class="eyebrow">Recorrido histórico interactivo</div>
+      <h1 class="title">INTA · La Semilla del Sur</h1>
+      <div class="subtitle">Chacra Experimental del Km. 190 N.R.B. — El Colorado, Formosa (1939–1956)</div>
+      <div class="divider"></div>
+      <div class="lugar">
+        Un paseo en primera persona por los albardones del Río Bermejo, entre el monte subtropical,
+        los semilleros de algodón Upland y las construcciones históricas de la Estación Experimental
+        que, en 1956, dio origen al Instituto Nacional de Tecnología Agropecuaria.
+      </div>
+      <div id="authorField">
+        <label for="authorInput">Investigación y guion — tu nombre</label>
+        <input id="authorInput" type="text" placeholder="Escribí tu nombre" maxlength="40">
+      </div>
+      <button id="startBtn" disabled>Cargando el motor 3D…</button>
+      <div id="loadError" style="display:none; margin-top:14px; font-size:12.5px; line-height:1.6; color:#e08a6a;">
+        No se pudo cargar la librería 3D. Revisá tu conexión a internet (la primera vez que se abre el recorrido en cada dispositivo hace falta señal, aunque después la página ya haya sido descargada) e intentá de nuevo.
+        <br><button id="retryLoadBtn" style="margin-top:10px; padding:8px 18px; border:1px solid var(--ocre); background:transparent; color:var(--crema); border-radius:2px; font-family:inherit; font-size:12px; cursor:pointer;">Reintentar</button>
+      </div>
+      <div class="howto">
+        Computadora: mové el mouse para mirar y usá WASD / flechas para caminar.<br>
+        Celular: arrastrá la pantalla para mirar y usá el panel de flechas para caminar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CANVAS 3D ============ -->
+  <canvas id="c"></canvas>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud">
+    <div id="topbar">
+      <div class="badge" id="progressBadge">Lugares visitados: <b id="visitedCount">0</b>/7 &nbsp;·&nbsp; Edificios abiertos: <b id="unlockedCount">0</b>/5</div>
+      <button id="soundToggleBtn" title="Silenciar/activar sonido ambiente">🔊</button>
+      <button id="questBtnDesktop">Desafíos históricos (<span id="scoreDesktop">0</span>/5)</button>
+    </div>
+    <div id="crosshair"></div>
+    <div id="interactHint">Acercate para leer el cartel histórico</div>
+    <button id="interactBtn">🔓 Intentar ingresar</button>
+    <div id="desktopHint">Click para mirar alrededor · WASD para caminar</div>
+  </div>
+
+  <!-- ============ controles móviles ============ -->
+  <div id="mobileControls">
+    <div id="lookLayer"></div>
+    <div class="dpad">
+      <div class="dbtn" id="dUp">▲</div>
+      <div class="dbtn" id="dLeft">◀</div>
+      <div class="dbtn" id="dDownReal">▼</div>
+      <div class="dbtn" id="dRight">▶</div>
+    </div>
+    <div id="questBtnMobile">Desafíos (<span id="scoreMobile">0</span>/5)</div>
+  </div>
+
+  <!-- ============ Panel de punto de interés ============ -->
+  <div id="poiPanel">
+    <div class="poiCard">
+      <span class="yr" id="poiYear">1939</span>
+      <h2 id="poiTitle">Título</h2>
+      <p id="poiText">Texto</p>
+      <div class="fuente" id="poiFuente">Fuente:</div>
+      <button class="closeBtn" id="poiClose">Cerrar cartel</button>
+    </div>
+  </div>
+
+  <!-- ============ Quiz ============ -->
+  <div id="quizOverlay">
+    <div class="quizCard">
+      <button id="quizCloseX">✕</button>
+      <div id="quizBody">
+        <div class="quizProg" id="quizProg">Pregunta 1 de 5</div>
+        <div class="quizQ" id="quizQ">...</div>
+        <div id="quizOpts"></div>
+        <div class="quizJust" id="quizJust"></div>
+        <button class="quizNextBtn" id="quizNextBtn">Siguiente</button>
+      </div>
+      <div id="quizFinal">
+        <div class="eyebrow">Desafíos completados</div>
+        <div class="score" id="quizFinalScore">0/5</div>
+        <p id="quizFinalMsg">Gracias por recorrer la historia del INTA.</p>
+        <button class="quizNextBtn" style="display:block" id="quizRestartBtn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Desafío de puerta ============ -->
+  <div id="doorOverlay">
+    <div class="quizCard">
+      <div class="quizProg" id="doorProg">Desafío para ingresar</div>
+      <div class="quizQ" id="doorQ">...</div>
+      <div id="doorOpts"></div>
+      <div class="quizJust" id="doorJust"></div>
+      <button class="quizNextBtn" id="doorNextBtn">Continuar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // La app depende de la librería Three.js. En vez de confiar en un único CDN
+  // (que puede fallar por conexión, firewall o bloqueo regional en otro dispositivo),
+  // probamos varios espejos en orden hasta que uno cargue.
+  var MIRRORS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+    "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js",
+    "https://unpkg.com/three@0.128.0/build/three.min.js"
+  ];
+  var startBtn = document.getElementById('startBtn');
+  var loadError = document.getElementById('loadError');
+  var retryBtn = document.getElementById('retryLoadBtn');
+
+  function tryLoad(index){
+    if(index >= MIRRORS.length){
+      startBtn.textContent = 'No se pudo cargar';
+      loadError.style.display = 'block';
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = MIRRORS[index];
+    s.onload = function(){
+      if(typeof THREE === 'undefined'){
+        tryLoad(index+1);
+        return;
+      }
+      startBtn.disabled = false;
+      startBtn.textContent = 'Comenzar el recorrido';
+      loadError.style.display = 'none';
+    };
+    s.onerror = function(){ tryLoad(index+1); };
+    document.head.appendChild(s);
+  }
+
+  retryBtn.addEventListener('click', function(){
+    loadError.style.display = 'none';
+    startBtn.disabled = true;
+    startBtn.textContent = 'Cargando el motor 3D…';
+    tryLoad(0);
+  });
+
+  tryLoad(0);
+})();
+</script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   DATOS HISTÓRICOS (extraídos del SKILL)
+   ============================================================ */
+const POIS_DATA = [
+  {
+    id:'chacra',
+    name:'La Chacra Experimental del Km. 190',
+    year:'1939',
+    text:'Aquí nació todo: la Junta Nacional del Algodón creó la Chacra Experimental del Km. 190 N.R.B. sobre un predio reservado de aproximadamente 125 hectáreas, en plena "fiebre del oro blanco" que atrajo a colonos polacos, alemanes y ucranianos. El Agr. Alberto Pérez, egresado de Córdoba, fue su primer director.',
+    fuente:'Fuente: Memorias y entrevistas de Adolfo C. A. Galván; testimonios de Cirilo Luis Pourcel; registro del primer censo de 1943.'
+  },
+  {
+    id:'rancho',
+    name:'El Rancho Grande',
+    year:'1943',
+    text:'La vivienda oficial del Director, construida de madera y barro con techo de zinc. Adolfo Carlos Alberto Galván llegó en agosto de 1942 y asumió la dirección en 1943, consolidando la transición de la Estación hacia el futuro INTA. Frente al rancho, un sulky era el único medio de transporte.',
+    fuente:'Fuente: "Texto pegado" — Memorias de Adolfo Carlos Alberto Galván.'
+  },
+  {
+    id:'desmotadora',
+    name:'La Desmotadora de Frías',
+    year:'1940',
+    text:'Montada con maquinaria rústica usada, traída a rastras desde Frías, Santiago del Estero. En 1939 esta fue la primera Desmotadora Oficial, creada para regular los precios del algodón frente a los acopiadores privados. En 1943 se separó administrativamente de la Chacra, que pasó a depender del Ministerio de Agricultura y Ganadería.',
+    fuente:'Fuente: "camping tp.docx" — Entrevista a Héctor Retamozo, oficinas del INTA de El Colorado.'
+  },
+  {
+    id:'telbiz',
+    name:'La Casa Redonda de Jorge Telbiz',
+    year:'s/f',
+    text:'Una singular construcción de ladrillo visto con cúpulas en espiral, levantada de forma autodidacta por el inmigrante soviético Jorge Telbiz dentro de la reserva del INTA. Para trazar las hiladas usó una volanta de caballos modificada como andamio giratorio interno. Hoy se conserva como patrimonio del predio.',
+    fuente:'Fuente: "Casas_Redondas_Jorge_Telbiz_El_Colorado.docx" — Registros históricos y arquitectónicos.'
+  },
+  {
+    id:'apinta',
+    name:'La Proveeduría de APINTA',
+    year:'s/f',
+    text:'APINTA fue la cooperativa de consumo y proveeduría del personal de la Estación Experimental: un almacén rústico de estanterías de madera dura con mercaderías de trueque, bolsas de harina y herramientas para los trabajadores de la Chacra.',
+    fuente:'Fuente: "camping tp.docx" — Entrevista a Héctor Retamozo, oficinas del INTA de El Colorado.'
+  },
+  {
+    id:'puente',
+    name:'El Puente Libertad',
+    year:'décadas de 1950',
+    text:'Construido a lo largo de siete años de obra sobre el traicionero río Bermejo, el Puente Libertad une la localidad formoseña de El Colorado con la ciudad chaqueña de General José de San Martín. Su habilitación, a fines de la década de 1950, terminó con buena parte del histórico aislamiento geográfico de la región y sigue siendo hoy el nexo vial entre ambas provincias.',
+    fuente:'Fuente: Wikipedia — "Puente Libertad"; Municipalidad de El Colorado (elcolorado.gob.ar).'
+  },
+  {
+    id:'inta_edificio',
+    name:'El Edificio del INTA',
+    year:'1956 – actualidad',
+    text:'En 1956 se creó el Instituto Nacional de Tecnología Agropecuaria (INTA), que absorbió e integró la antigua Estación Experimental bajo una estructura moderna de investigación aplicada y extensión rural orientada a la familia de campo. Este edificio representa esa continuidad: de la chacra de tracción a sangre de 1939 a la institución de investigación agropecuaria que sigue funcionando hoy en El Colorado.',
+    fuente:'Fuente: hitos institucionales de la Chacra Experimental del Km. 190 N.R.B. y creación del INTA.'
+  },
+  {
+    id:'pilaga_qom',
+    name:'La Memoria Pilagá y Qom del Monte y el Río',
+    year:'territorio ancestral',
+    type:'npc',
+    text:'Antes de la Chacra, antes de los colonos y del ferrocarril, este monte y las orillas del río Bermejo eran —y siguen siendo— territorio de los pueblos Pilagá y Qom, parte del Gran Chaco. Durante generaciones vivieron de la caza, la pesca y la recolección en estos mismos montes y cañadones que hoy cruza el recorrido. La historia de la Estación Experimental y del algodón se escribió sobre una tierra que ya tenía dueños y una cultura propia mucho antes de 1939.',
+    fuente:'Contexto histórico general sobre los pueblos originarios del Gran Chaco formoseño, no incluido en los documentos originales de la Chacra Experimental.'
+  }
+];
+
+const QUIZ_DATA = [
+  {
+    q:'¿En qué año se instaló formalmente la Chacra Experimental del Km. 190 N.R.B., dando inicio a la investigación agrícola en Formosa?',
+    opts:['1956','1939','1943'], correct:1,
+    just:'Fue instalada en 1939 por la Junta Nacional del Algodón en un predio reservado de 125 hectáreas.'
+  },
+  {
+    q:'Cuando Adolfo Galván asumió la dirección en 1943, ¿con qué infraestructura de tracción a sangre contaba la Estación para trabajar la tierra?',
+    opts:['Dos tractores a vapor y un arado mecánico','7 yeguarizos, arados de mancera, cultivadoras a sangre, pulverizadoras a mochila, un rolo de lapacho y rastras','Solamente bueyes criollos y palas manuales'], correct:1,
+    just:'Galván detalla en sus memorias este inventario exacto de herramientas rústicas con las que inició su gestión.'
+  },
+  {
+    q:'¿Qué fitomejorador desarrolló la variedad de algodón "Upland" con trascendencia mundial?',
+    opts:['Norberto Reichart','Manuel Gutiérrez','Alberto Pérez'], correct:1,
+    just:'Los trabajos genéticos de Manuel Gutiérrez dotaron a la industria nacional del material básico rústico y precoz adaptado a la región.'
+  },
+  {
+    q:'¿Cuál es la procedencia y el método constructivo de la casa de cúpulas cilíndricas del predio del INTA?',
+    opts:['Colonos alemanes con adobes de arcilla roja','El inmigrante soviético Jorge Telbiz, con una volanta como andamio giratorio interno','Una antigua oficina de la Junta Nacional del Algodón con techo de paja'], correct:1,
+    just:'El constructor autodidacta Jorge Telbiz levantó esta emblemática casa redonda de mampostería en espiral.'
+  },
+  {
+    q:'¿Qué cooperativa de proveeduría se fundó para el personal de la Estación Experimental?',
+    opts:['Cooperativa Algodonera Río Bermejo','APINTA','Consorcio Caminero Pampa Villanueva'], correct:1,
+    just:'APINTA funcionó originalmente como la proveeduría para todo el personal asociado del INTA.'
+  },
+  {
+    q:'¿Qué relación tenían los pueblos Pilagá y Qom con el monte y el río Bermejo antes de la fundación de la Chacra Experimental?',
+    opts:['No tenían ninguna relación, llegaron recién con los colonos','Era su territorio ancestral: vivían de la caza, la pesca y la recolección en el monte y a orillas del río','Solo pasaban de paso, sin asentarse nunca en la zona'], correct:1,
+    just:'Los pueblos Pilagá y Qom habitan la región del Gran Chaco, incluido el actual territorio de Formosa, desde mucho antes de la colonización agrícola del siglo XX. El monte y ríos como el Bermejo fueron y siguen siendo centrales para su subsistencia y su cultura.'
+  }
+];
+
+/* ============================================================
+   EDIFICIOS ENTRABLES: colisión, puerta y desafío para ingresar
+   ============================================================ */
+const BUILDINGS = [
+  {
+    id:'rancho', cx:25, cz:-10, collisionRadius:3.3,
+    doorOffset:{x:0, z:3.1}, doorRadius:2.4,
+    challenge:{
+      q:'¿Cuándo llegó Adolfo Galván a la Estación y asumió luego su dirección?',
+      opts:['Llegó y asumió todo en 1939','Llegó en agosto de 1942 y asumió la dirección en 1943','Llegó recién en 1956, con la creación del INTA'],
+      correct:1,
+      just:'Galván llegó en agosto de 1942 y asumió la dirección en 1943, consolidando la transición hacia el futuro INTA.'
+    },
+    interior:{title:'Adentro del Rancho Grande', text:'La libreta de campo de Galván descansa sobre una mesa de madera dura. Sus anotaciones detallan el inventario exacto de tracción a sangre con el que se trabajaba la tierra: yeguarizos, arados de mancera y rastras, antes de la llegada de los tractores.'}
+  },
+  {
+    id:'desmotadora', cx:-30, cz:5, collisionRadius:5.0,
+    doorOffset:{x:0, z:4.6}, doorRadius:2.6,
+    challenge:{
+      q:'¿De dónde se trajo la maquinaria usada para montar esta Desmotadora en 1940?',
+      opts:['De Buenos Aires, en barco por el Paraná','A rastras desde Frías, en Santiago del Estero','Nunca se trajo maquinaria: se armó en el lugar desde cero'],
+      correct:1,
+      just:'La maquinaria, rústica y usada, fue traída a rastras desde Frías, provincia de Santiago del Estero.'
+    },
+    interior:{title:'Adentro de la Desmotadora', text:'El tableteo metálico de las poleas de cuero de buey todavía parece resonar entre las vigas de madera. Aquí se desmotaba la primera producción algodonera entregada por los colonos, regulando los precios frente a los acopiadores privados.'}
+  },
+  {
+    id:'telbiz', cx:15, cz:30, collisionRadius:2.9,
+    doorOffset:{x:0, z:2.7}, doorRadius:2.3,
+    challenge:{
+      q:'¿Qué usó Jorge Telbiz como andamio para levantar esta cúpula en espiral?',
+      opts:['Un andamio metálico industrial importado','Una volanta de caballos modificada como andamio giratorio interno','No usó andamio: apiló los ladrillos a mano desde el piso'],
+      correct:1,
+      just:'Telbiz operó una volanta de caballos modificada para girar por el lado interno de la bóveda y así trazar las hiladas en espiral.'
+    },
+    interior:{title:'Adentro de la Casa Redonda', text:'Desde adentro se aprecia el ángulo perfecto de la cúpula, calculado a pulso por el propio Telbiz para que la mampostería en espiral no colapsara durante la construcción.'}
+  },
+  {
+    id:'apinta', cx:-15, cz:-25, collisionRadius:2.7,
+    doorOffset:{x:0, z:-2.1}, doorRadius:2.2,
+    challenge:{
+      q:'¿Para quién funcionaba la proveeduría de APINTA?',
+      opts:['Solo para los grandes acopiadores privados de algodón','Para el personal asociado de la Estación Experimental','Para los turistas que visitaban la Chacra'],
+      correct:1,
+      just:'APINTA fue la cooperativa de consumo y proveeduría creada para el personal de la Estación Experimental.'
+    },
+    interior:{title:'Adentro de APINTA', text:'Bolsas de harina, herramientas y mercadería de trueque llenan las estanterías de madera dura, el sostén cotidiano de las familias que trabajaban la Chacra.'}
+  },
+  {
+    id:'inta_edificio', cx:42, cz:18, collisionRadius:5.2,
+    doorOffset:{x:0, z:4.6}, doorRadius:2.6,
+    challenge:{
+      q:'¿En qué año se creó el INTA, integrando a la antigua Estación Experimental?',
+      opts:['1939','1943','1956'],
+      correct:2,
+      just:'En 1956 se creó el Instituto Nacional de Tecnología Agropecuaria, absorbiendo a la Estación Experimental bajo una estructura moderna de investigación y extensión rural.'
+    },
+    interior:{title:'Adentro del Edificio del INTA', text:'Oficinas, laboratorios y archivos institucionales continúan hoy el trabajo que empezó en 1939 con la vieja Chacra: investigación aplicada al servicio de la familia de campo.'}
+  }
+];
+BUILDINGS.forEach(b=>{ b.unlocked=false; });
+
+/* ============================================================
+   ESTADO GLOBAL
+   ============================================================ */
+let scene, camera, renderer, clock;
+let yawObject, pitchObject; // yaw contiene la cámara para rotación
+const moveState = {forward:false, backward:false, left:false, right:false};
+let velocity = null;
+const WORLD_SIZE = 100;
+const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let pointerLocked = false;
+let currentPOI = null;
+let visitedSet = new Set();
+const poiMeshes = [];
+let quizScore = 0;
+let quizIndex = 0;
+let quizAnswered = false;
+let panelOpen = false;
+let quizOpen = false;
+let currentDoor = null;
+let currentInterior = null;
+let doorChallengeOpen = false;
+let buildingsUnlockedCount = 0;
+const vehicles = [];
+
+/* ============================================================
+   INIT THREE.JS
+   ============================================================ */
+function initScene(){
+  COTTON_STEM_MAT = new THREE.MeshLambertMaterial({color:0x4d6d3d});
+  COTTON_BOLL_MAT = new THREE.MeshLambertMaterial({color:0xfdf9ee, emissive:0x2a2618});
+  scene = new THREE.Scene();
+  const fogColor = 0xd9b98a;
+  scene.fog = new THREE.FogExp2(fogColor, 0.014);
+  scene.background = new THREE.Color(0xcfe4e0);
+
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 500);
+  pitchObject = new THREE.Object3D();
+  pitchObject.add(camera);
+  yawObject = new THREE.Object3D();
+  yawObject.position.set(0, 1.7, 8);
+  yawObject.add(pitchObject);
+  scene.add(yawObject);
+
+  renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'), antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // luz
+  const hemi = new THREE.HemisphereLight(0xfff2d0, 0x6b4a2a, 0.85);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffe3ad, 1.0);
+  sun.position.set(40, 60, 20);
+  scene.add(sun);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.25);
+  scene.add(ambient);
+
+  buildWorld();
+
+  window.addEventListener('resize', onResize);
+  clock = new THREE.Clock();
+}
+
+function onResize(){
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+/* ============================================================
+   CONSTRUCCIÓN DEL MUNDO (geometría procedural, sin assets externos)
+   ============================================================ */
+function buildWorld(){
+  // ---- suelo base terracota ----
+  const groundGeo = new THREE.PlaneGeometry(WORLD_SIZE*2, WORLD_SIZE*2, 1, 1);
+  const groundMat = new THREE.MeshLambertMaterial({color:0xb5622f});
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI/2;
+  scene.add(ground);
+
+  // ---- zona de monte (verde subtropical, oeste) ----
+  addPatch(-55, 0, 55, 90, 0x3f5a34, 0.02);
+  // ---- zona de algodón (blanco brillante, resaltada, sureste) ----
+  addPatch(35, -50, 58, 58, 0xf0ead8, 0.02);
+  // ---- río Bermejo (franja bermellón, aguas cargadas de sedimento, norte) ----
+  const riverGeo = new THREE.PlaneGeometry(220, 22);
+  const riverMat = new THREE.MeshLambertMaterial({color:0xa8422a});
+  const river = new THREE.Mesh(riverGeo, riverMat);
+  river.rotation.x = -Math.PI/2;
+  river.position.set(0, 0.02, -78);
+  scene.add(river);
+  // reflejo/veta más clara para sugerir el movimiento del agua bermellón
+  const riverGlint = new THREE.Mesh(new THREE.PlaneGeometry(220, 5), new THREE.MeshLambertMaterial({color:0xc96a45, transparent:true, opacity:0.55}));
+  riverGlint.rotation.x = -Math.PI/2;
+  riverGlint.position.set(0, 0.03, -80);
+  scene.add(riverGlint);
+  const riverLabel = createLabelSprite('Río Bermejo');
+  riverLabel.position.set(0, 3.2, -78);
+  scene.add(riverLabel);
+  // barranca (borde elevado junto al río)
+  const barrancaGeo = new THREE.BoxGeometry(220, 1.6, 6);
+  const barrancaMat = new THREE.MeshLambertMaterial({color:0x8a4a26});
+  const barranca = new THREE.Mesh(barrancaGeo, barrancaMat);
+  barranca.position.set(0, 0.8, -66);
+  scene.add(barranca);
+
+  // ---- caminos de tierra (terracota más clara) ----
+  addPath(0,0, 0,-70, 5, 0xc98a52);
+  addPath(0,-70, 0,-96, 4.4, 0xc98a52);
+  addPath(0,0, 30,-10, 5, 0xc98a52);
+  addPath(0,0, -35,8, 5, 0xc98a52);
+  addPath(0,0, 15,32, 5, 0xc98a52);
+  addPath(0,0, -18,-28, 5, 0xc98a52);
+
+  // ---- árboles del monte (mucho más densos) ----
+  const treePositions = generateScatter(-55,0,50,85,72, 40);
+  treePositions.forEach(p=>addTree(p.x,p.z));
+  // ---- monte ribereño, franja de árboles junto al río Bermejo ----
+  const riverTrees = generateScatter(-60,-72,120,16,34, 91);
+  riverTrees.forEach(p=>addTree(p.x,p.z));
+
+  // ---- capullos de algodón (campo mucho más cargado y luminoso) ----
+  const cottonPositions = generateScatter(20,-72,62,24,150, 55);
+  cottonPositions.forEach(p=>addCottonPlant(p.x,p.z));
+  // ---- gente cosechando el algodón ----
+  addCottonPickers();
+
+  // ---- edificios / puntos de interés ----
+  addChacraMarker(0,-28);
+  addRanchoGrande(25,-10);
+  addDesmotadora(-30,5);
+  addCasaTelbiz(15,30);
+  addAPINTA(-15,-25);
+  addINTAEdificio(42,18);
+  addPilagaQomNPC(-45,-52);
+  addBridge(0,-78);
+  setupVehicles();
+  addDoorMarkers();
+
+  // ---- cielo simple con niebla cálida ya cubre horizonte ----
+}
+
+function addPatch(cx, cz, w, d, color, jitter){
+  const geo = new THREE.PlaneGeometry(w, d, 1, 1);
+  const mat = new THREE.MeshLambertMaterial({color});
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI/2;
+  mesh.position.set(cx, 0.03, cz);
+  scene.add(mesh);
+}
+
+function addPath(x1,z1,x2,z2,width,color){
+  const dx = x2-x1, dz = z2-z1;
+  const len = Math.sqrt(dx*dx+dz*dz);
+  const angle = Math.atan2(dz,dx);
+  const geo = new THREE.PlaneGeometry(len, width);
+  const mat = new THREE.MeshLambertMaterial({color});
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI/2;
+  mesh.rotation.z = -angle;
+  mesh.position.set((x1+x2)/2, 0.04, (z1+z2)/2);
+  scene.add(mesh);
+}
+
+function generateScatter(x0,z0,w,d,count,seed){
+  // generador pseudoaleatorio determinístico simple
+  let s = seed;
+  function rnd(){ s = (s*9301+49297)%233280; return s/233280; }
+  const pts = [];
+  for(let i=0;i<count;i++){
+    pts.push({x:x0+rnd()*w, z:z0+rnd()*d});
+  }
+  return pts;
+}
+
+function addTree(x,z){
+  const group = new THREE.Group();
+  const trunkH = 1.6+Math.random()*1.4;
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14,0.2,trunkH,6),
+    new THREE.MeshLambertMaterial({color:0x5a3a22})
+  );
+  trunk.position.y = trunkH/2;
+  group.add(trunk);
+  const canopyColor = Math.random()>0.5 ? 0x3f5a34 : 0x4d6d3d;
+  const canopy = new THREE.Mesh(
+    new THREE.ConeGeometry(1.3+Math.random()*0.6, 2.4+Math.random()*1.0, 7),
+    new THREE.MeshLambertMaterial({color:canopyColor})
+  );
+  canopy.position.y = trunkH + 1.2;
+  group.add(canopy);
+  group.position.set(x,0,z);
+  scene.add(group);
+}
+
+let COTTON_STEM_MAT, COTTON_BOLL_MAT;
+
+function addCottonPlant(x,z){
+  const group = new THREE.Group();
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.55,5), COTTON_STEM_MAT);
+  stem.position.y = 0.27;
+  group.add(stem);
+  const bollCount = 4 + Math.floor(Math.random()*2);
+  for(let i=0;i<bollCount;i++){
+    const boll = new THREE.Mesh(new THREE.SphereGeometry(0.155,6,6), COTTON_BOLL_MAT);
+    boll.position.set((Math.random()-0.5)*0.34, 0.42+Math.random()*0.28, (Math.random()-0.5)*0.34);
+    group.add(boll);
+  }
+  group.position.set(x,0,z);
+  scene.add(group);
+}
+
+function addCottonBasket(x,z){
+  const group = new THREE.Group();
+  const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.34,0.5,10), new THREE.MeshLambertMaterial({color:0x6b4a2a}));
+  basket.position.y = 0.25;
+  group.add(basket);
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(0.42,10,8), COTTON_BOLL_MAT);
+  mound.scale.y = 0.6;
+  mound.position.y = 0.62;
+  group.add(mound);
+  group.position.set(x,0,z);
+  scene.add(group);
+}
+
+function makeSign(text, x, z, yOff){
+  // pequeño cartel indicador (poste + tabla) para señalar el POI a distancia
+  const group = new THREE.Group();
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,2.0,6), new THREE.MeshLambertMaterial({color:0x4a3320}));
+  post.position.y = 1.0;
+  group.add(post);
+  const board = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.5,0.06), new THREE.MeshLambertMaterial({color:0xc99a3d}));
+  board.position.y = 1.9 + (yOff||0);
+  group.add(board);
+  group.position.set(x,0,z);
+  scene.add(group);
+  return group;
+}
+
+function registerPOI(id, mesh, radius){
+  const data = POIS_DATA.find(p=>p.id===id);
+  poiMeshes.push({id, mesh, radius: radius||9, pos:mesh.position.clone(), data});
+}
+
+function createLabelSprite(text){
+  const fontSize = 46;
+  const paddingX = 26, paddingY = 16;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.font = 'bold '+fontSize+'px Georgia, serif';
+  const textWidth = Math.ceil(ctx.measureText(text).width);
+  canvas.width = textWidth + paddingX*2;
+  canvas.height = fontSize + paddingY*2;
+  // el resize de canvas reinicia el contexto: hay que reconfigurar la fuente
+  ctx.font = 'bold '+fontSize+'px Georgia, serif';
+  // fondo tipo cartel de madera envejecida
+  roundRect(ctx, 0, 0, canvas.width, canvas.height, 14);
+  ctx.fillStyle = 'rgba(36,26,18,0.82)';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(201,154,61,0.85)';
+  roundRect(ctx, 2, 2, canvas.width-4, canvas.height-4, 12);
+  ctx.stroke();
+  // texto
+  ctx.fillStyle = '#f2ead8';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, canvas.width/2, canvas.height/2 + 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  const material = new THREE.SpriteMaterial({map:texture, transparent:true, depthTest:false, depthWrite:false});
+  const sprite = new THREE.Sprite(material);
+  const scaleFactor = 0.016;
+  sprite.scale.set(canvas.width*scaleFactor, canvas.height*scaleFactor, 1);
+  sprite.renderOrder = 999;
+  return sprite;
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function addNameLabel(group, poiId, offsetX, offsetY, offsetZ){
+  const data = POIS_DATA.find(p=>p.id===poiId);
+  if(!data) return;
+  const sprite = createLabelSprite(data.name);
+  sprite.position.set(offsetX||0, offsetY, offsetZ||0);
+  group.add(sprite);
+}
+
+function addChacraMarker(x,z){
+  const group = new THREE.Group();
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,3.4,7), new THREE.MeshLambertMaterial({color:0x5a3a22}));
+  post.position.y = 1.7;
+  group.add(post);
+  const plaque = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.0,0.08), new THREE.MeshLambertMaterial({color:0xc99a3d}));
+  plaque.position.y = 3.0;
+  group.add(plaque);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.0,0.3,10), new THREE.MeshLambertMaterial({color:0x8a4a26}));
+  base.position.y = 0.15;
+  group.add(base);
+  addNameLabel(group, 'chacra', 0, 4.2, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('chacra', group, 8);
+}
+
+function addRanchoGrande(x,z){
+  const group = new THREE.Group();
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(6,2.6,4.2), new THREE.MeshLambertMaterial({color:0x9c7a4e}));
+  walls.position.y = 1.3;
+  group.add(walls);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(4.6,1.8,4), new THREE.MeshLambertMaterial({color:0x8b8f8a}));
+  roof.rotation.y = Math.PI/4;
+  roof.position.y = 3.5;
+  group.add(roof);
+  const galeria = new THREE.Mesh(new THREE.BoxGeometry(6.4,0.15,1.6), new THREE.MeshLambertMaterial({color:0x6d4a2a}));
+  galeria.position.set(0,0.1,3.2);
+  group.add(galeria);
+  // sulky simplificado
+  const sulky = new THREE.Group();
+  const wheel1 = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.06,6,12), new THREE.MeshLambertMaterial({color:0x2b1c10}));
+  wheel1.rotation.y = Math.PI/2; wheel1.position.set(-0.6,0.5,0);
+  const wheel2 = wheel1.clone(); wheel2.position.set(0.6,0.5,0);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.4,0.5), new THREE.MeshLambertMaterial({color:0x5a3a22}));
+  seat.position.set(0,0.9,0);
+  sulky.add(wheel1,wheel2,seat);
+  sulky.position.set(3.5,0,5.5);
+  group.add(sulky);
+  addNameLabel(group, 'rancho', 0, 5.1, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('rancho', group, 9);
+}
+
+function addDesmotadora(x,z){
+  const group = new THREE.Group();
+  const shed = new THREE.Mesh(new THREE.BoxGeometry(9,4.2,6), new THREE.MeshLambertMaterial({color:0x7d6a4a}));
+  shed.position.y = 2.1;
+  group.add(shed);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(9.6,0.3,6.6), new THREE.MeshLambertMaterial({color:0x8b8f8a}));
+  roof.position.y = 4.35;
+  group.add(roof);
+  // maquinaria - poleas
+  for(let i=0;i<3;i++){
+    const gear = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,0.3,10), new THREE.MeshLambertMaterial({color:0x2b2b2b}));
+    gear.rotation.x = Math.PI/2;
+    gear.position.set(-3+i*3, 1.4, 3.3);
+    group.add(gear);
+  }
+  const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.4,3.6,8), new THREE.MeshLambertMaterial({color:0x4a3a2a}));
+  chimney.position.set(3.5,4.4,-2);
+  group.add(chimney);
+  addNameLabel(group, 'desmotadora', 0, 5.6, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('desmotadora', group, 10);
+}
+
+function addCasaTelbiz(x,z){
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.8,3.0,16), new THREE.MeshLambertMaterial({color:0x9c4a2e}));
+  body.position.y = 1.5;
+  group.add(body);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(2.6, 16, 10, 0, Math.PI*2, 0, Math.PI/2), new THREE.MeshLambertMaterial({color:0x7a3417}));
+  dome.position.y = 3.0;
+  group.add(dome);
+  // franjas espirales sugeridas con anillos finos
+  for(let i=0;i<5;i++){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.62-i*0.02, 0.03, 6, 24), new THREE.MeshLambertMaterial({color:0x5a2a15}));
+    ring.rotation.x = Math.PI/2;
+    ring.position.y = 0.6+i*0.55;
+    group.add(ring);
+  }
+  addNameLabel(group, 'telbiz', 0, 6.3, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('telbiz', group, 8);
+}
+
+function addAPINTA(x,z){
+  const group = new THREE.Group();
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(4.4,2.2,3.4), new THREE.MeshLambertMaterial({color:0x8a6a42}));
+  walls.position.y = 1.1;
+  group.add(walls);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(4.9,0.2,3.9), new THREE.MeshLambertMaterial({color:0x6b5a3a}));
+  roof.position.y = 2.3;
+  group.add(roof);
+  const shelfMat = new THREE.MeshLambertMaterial({color:0x5a3a22});
+  for(let i=0;i<2;i++){
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.6,0.1,0.4), shelfMat);
+    shelf.position.set(0, 0.8+i*0.6, 1.9);
+    group.add(shelf);
+  }
+  addNameLabel(group, 'apinta', 0, 3.1, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('apinta', group, 7);
+}
+
+function addINTAEdificio(x,z){
+  const group = new THREE.Group();
+  // cuerpo principal, más "institucional" que las construcciones históricas de barro y madera
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(9,3.4,5.5), new THREE.MeshLambertMaterial({color:0xd8d2c0}));
+  walls.position.y = 1.7;
+  group.add(walls);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(9.5,0.25,6), new THREE.MeshLambertMaterial({color:0x6b7a72}));
+  roof.position.y = 3.5;
+  group.add(roof);
+  // franja de "vidrio" en la fachada
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(7.6,1.3,0.1), new THREE.MeshLambertMaterial({color:0x7fa8b8}));
+  glass.position.set(0,1.9,2.76);
+  group.add(glass);
+  // cartel institucional
+  const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,1.8,7), new THREE.MeshLambertMaterial({color:0x4a3320}));
+  signPost.position.set(0,0.9,4.6);
+  group.add(signPost);
+  const signBoard = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.7,0.08), new THREE.MeshLambertMaterial({color:0x2e5c3e}));
+  signBoard.position.set(0,1.85,4.6);
+  group.add(signBoard);
+  // mástil con "bandera" simple
+  const flagpole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,4.2,6), new THREE.MeshLambertMaterial({color:0xb0b0b0}));
+  flagpole.position.set(-5.2,2.1,3.5);
+  group.add(flagpole);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.0,0.6), new THREE.MeshLambertMaterial({color:0xc99a3d, side:THREE.DoubleSide}));
+  flag.position.set(-4.65,3.8,3.5);
+  group.add(flag);
+  addNameLabel(group, 'inta_edificio', 0, 4.7, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('inta_edificio', group, 10);
+}
+
+function addPilagaQomNPC(x,z){
+  const group = new THREE.Group();
+  // toldo / refugio tradicional simple (postes + techo inclinado), representación general y respetuosa
+  const shelter = new THREE.Group();
+  const poleMat = new THREE.MeshLambertMaterial({color:0x5a3a22});
+  const polePositions = [[-1.6,-1.2],[1.6,-1.2],[-1.6,1.2],[1.6,1.2]];
+  polePositions.forEach(p=>{
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.9,6), poleMat);
+    pole.position.set(p[0],0.95,p[1]);
+    shelter.add(pole);
+  });
+  const thatch = new THREE.Mesh(new THREE.BoxGeometry(3.6,0.15,2.8), new THREE.MeshLambertMaterial({color:0xb99a5a}));
+  thatch.position.y = 1.95;
+  thatch.rotation.z = 0.06;
+  shelter.add(thatch);
+  shelter.position.set(3.2,0,-1.5);
+  group.add(shelter);
+  // fogón
+  const fireRing = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.07,6,14), new THREE.MeshLambertMaterial({color:0x5a5248}));
+  fireRing.rotation.x = Math.PI/2;
+  fireRing.position.set(2.6,0.05,0.6);
+  group.add(fireRing);
+  const embers = new THREE.Mesh(new THREE.ConeGeometry(0.25,0.4,6), new THREE.MeshLambertMaterial({color:0xb5542a}));
+  embers.position.set(2.6,0.25,0.6);
+  group.add(embers);
+  // figura del referente Pilagá/Qom (representación sencilla, sin estereotipos)
+  const figure = new THREE.Group();
+  const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.9,8), new THREE.MeshLambertMaterial({color:0x3a3226}));
+  legs.position.y = 0.45;
+  figure.add(legs);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.2,0.8,8), new THREE.MeshLambertMaterial({color:0x8a5a34}));
+  torso.position.y = 1.25;
+  figure.add(torso);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2,10,10), new THREE.MeshLambertMaterial({color:0xc48f5e}));
+  head.position.y = 1.78;
+  figure.add(head);
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.6,6), new THREE.MeshLambertMaterial({color:0x4a3320}));
+  stick.position.set(0.35,0.9,0);
+  stick.rotation.z = 0.15;
+  figure.add(stick);
+  figure.position.set(0,0,0);
+  group.add(figure);
+  addNameLabel(group, 'pilaga_qom', 1.5, 2.8, -0.3);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('pilaga_qom', group, 9);
+}
+
+/* ============================================================
+   COSECHADORES DE ALGODÓN (figuras animadas en el campo)
+   ============================================================ */
+const cottonPickers = [];
+function createPickerFigure(shirtColor){
+  const figure = new THREE.Group();
+  const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.13,0.75,7), new THREE.MeshLambertMaterial({color:0x3a3a3a}));
+  legs.position.y = 0.38;
+  figure.add(legs);
+  const torso = new THREE.Group();
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.19,0.7,8), new THREE.MeshLambertMaterial({color:shirtColor}));
+  chest.position.y = 0.35;
+  torso.add(chest);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18,10,10), new THREE.MeshLambertMaterial({color:0xc48f5e}));
+  head.position.y = 0.85;
+  torso.add(head);
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.32,0.16,10), new THREE.MeshLambertMaterial({color:0xd8c48a}));
+  hat.position.y = 0.98;
+  torso.add(hat);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.55,6), new THREE.MeshLambertMaterial({color:shirtColor}));
+  arm.position.set(0.24,0.35,0.12);
+  arm.rotation.x = -0.6;
+  torso.add(arm);
+  torso.position.y = 0.75;
+  figure.add(torso);
+  const sack = new THREE.Mesh(new THREE.SphereGeometry(0.3,8,7), COTTON_BOLL_MAT);
+  sack.scale.set(0.8,1.1,0.8);
+  sack.position.set(-0.32,0.55,-0.1);
+  figure.add(sack);
+  figure.userData.torso = torso;
+  return figure;
+}
+function addCottonPickers(){
+  const shirtColors = [0x8a4a26,0x5a6b3a,0x6b4a5a,0x3a5a6b,0x8a6a3a,0x4a4a6b];
+  const spots = generateScatter(20,-72,58,22,7, 77);
+  spots.forEach((p,i)=>{
+    const figure = createPickerFigure(shirtColors[i % shirtColors.length]);
+    figure.position.set(p.x,0,p.z);
+    figure.rotation.y = Math.random()*Math.PI*2;
+    scene.add(figure);
+    cottonPickers.push({figure, phase: Math.random()*Math.PI*2, speed: 1.1+Math.random()*0.6});
+  });
+  // algunos canastos de algodón cosechado cerca de la gente
+  spots.forEach((p,i)=>{
+    if(i%2===0) addCottonBasket(p.x+0.9, p.z+0.6);
+  });
+}
+function updateCottonPickers(t){
+  cottonPickers.forEach(p=>{
+    const bend = (Math.sin(t*p.speed + p.phase)+1)/2; // 0..1
+    p.figure.userData.torso.rotation.x = bend*0.75;
+    p.figure.position.y = 0;
+  });
+}
+
+function addBridge(x,z){
+  const group = new THREE.Group();
+  const deckLen = 30, deckWidth = 5.2;
+  const deckY = 1.0;
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(deckWidth, 0.3, deckLen), new THREE.MeshLambertMaterial({color:0x8f8a7e}));
+  deck.position.set(0, deckY, 0);
+  group.add(deck);
+  // rampas de acceso en cada extremo
+  [ -1, 1 ].forEach(dir=>{
+    const ramp = new THREE.Mesh(new THREE.BoxGeometry(deckWidth, 0.3, 6), new THREE.MeshLambertMaterial({color:0xc98a52}));
+    ramp.position.set(0, deckY*0.5, dir*(deckLen/2+3));
+    ramp.rotation.x = dir* -0.16;
+    group.add(ramp);
+  });
+  // baranda
+  [-1,1].forEach(side=>{
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.8,deckLen), new THREE.MeshLambertMaterial({color:0x5a5a52}));
+    rail.position.set(side*deckWidth/2, deckY+0.5, 0);
+    group.add(rail);
+  });
+  // pilares que bajan hasta el agua
+  for(let i=-1;i<=1;i++){
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.6,deckY+0.6,8), new THREE.MeshLambertMaterial({color:0x716c60}));
+    pillar.position.set(0, (deckY+0.6)/2 - 0.3, i*9);
+    group.add(pillar);
+  }
+  addNameLabel(group, 'puente', 0, 3.6, 0);
+  group.position.set(x,0,z);
+  scene.add(group);
+  registerPOI('puente', group, 11);
+}
+
+function addDoorMarkers(){
+  // marca visual en el piso + candado sobre cada puerta de los edificios entrables
+  BUILDINGS.forEach(b=>{
+    const doorX = b.cx + b.doorOffset.x;
+    const doorZ = b.cz + b.doorOffset.z;
+    const mat = new THREE.Mesh(new THREE.CircleGeometry(1.1,16), new THREE.MeshLambertMaterial({color:0x3a2a18}));
+    mat.rotation.x = -Math.PI/2;
+    mat.position.set(doorX, 0.05, doorZ);
+    scene.add(mat);
+    const icon = createLabelSprite('🔒 Desafío para entrar');
+    icon.position.set(doorX, 2.15, doorZ);
+    scene.add(icon);
+    b.doorMat = mat;
+    b.doorIcon = icon;
+    b.doorX = doorX;
+    b.doorZ = doorZ;
+  });
+}
+
+function updateDoorIcon(b){
+  scene.remove(b.doorIcon);
+  const label = b.unlocked ? '✓ Ingreso habilitado' : '🔒 Desafío para entrar';
+  const icon = createLabelSprite(label);
+  icon.position.set(b.doorX, 2.15, b.doorZ);
+  scene.add(icon);
+  b.doorIcon = icon;
+}
+
+/* ============================================================
+   VEHÍCULOS INSTITUCIONALES CON INSIGNIA INTA
+   ============================================================ */
+function createVehicle(bodyColor){
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2,0.75,1.15), new THREE.MeshLambertMaterial({color:bodyColor}));
+  body.position.y = 0.75;
+  group.add(body);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.6,1.05), new THREE.MeshLambertMaterial({color:0xdfe6e2}));
+  cabin.position.set(-0.35,1.35,0);
+  group.add(cabin);
+  const wheelMat = new THREE.MeshLambertMaterial({color:0x201c18});
+  [[-0.8,-0.62],[-0.8,0.62],[0.8,-0.62],[0.8,0.62]].forEach(p=>{
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.22,10), wheelMat);
+    wheel.rotation.z = Math.PI/2;
+    wheel.position.set(p[0],0.32,p[1]);
+    group.add(wheel);
+  });
+  const decal = createLabelSprite('INTA');
+  decal.scale.multiplyScalar(0.55);
+  decal.position.set(0,1.55,0);
+  group.add(decal);
+  scene.add(group);
+  return group;
+}
+
+function setupVehicles(){
+  // Las rutas siguen exactamente las líneas de los caminos de tierra (todas parten
+  // del cruce central 0,0) y se detienen bastante antes del radio de cada edificio,
+  // para que los vehículos nunca lleguen a atravesar una construcción.
+  const routeA = [ {x:0,z:0}, {x:-19.25,z:4.4}, {x:0,z:0}, {x:-9.9,z:-15.4} ]; // rumbo desmotadora / rumbo APINTA
+  const routeB = [ {x:0,z:0}, {x:16.5,z:-5.5}, {x:0,z:0}, {x:8.25,z:17.6} ]; // rumbo Rancho Grande / rumbo Casa Telbiz
+  vehicles.push({group:createVehicle(0x3f6b3a), route:routeA, idx:0, speed:5.5});
+  vehicles.push({group:createVehicle(0x8a4a26), route:routeB, idx:0, speed:4.4});
+  vehicles.forEach(v=>{ v.group.position.set(v.route[0].x, 0, v.route[0].z); });
+}
+
+function updateVehicles(dt){
+  vehicles.forEach(v=>{
+    const target = v.route[v.idx];
+    const dx = target.x - v.group.position.x;
+    const dz = target.z - v.group.position.z;
+    const dist = Math.sqrt(dx*dx+dz*dz);
+    if(dist < 0.4){
+      v.idx = (v.idx+1) % v.route.length;
+      return;
+    }
+    const step = Math.min(dist, v.speed*dt);
+    v.group.position.x += (dx/dist)*step;
+    v.group.position.z += (dz/dist)*step;
+    v.group.rotation.y = Math.atan2(dx,dz);
+  });
+}
+
+/* ============================================================
+   MOVIMIENTO / CÁMARA
+   ============================================================ */
+const MOVE_SPEED = 9.5;
+const BOUNDS = WORLD_SIZE*0.95;
+
+function updateMovement(dt){
+  if(panelOpen || quizOpen || doorChallengeOpen) return;
+  const dir = new THREE.Vector3();
+  if(moveState.forward) dir.z -= 1;
+  if(moveState.backward) dir.z += 1;
+  if(moveState.left) dir.x -= 1;
+  if(moveState.right) dir.x += 1;
+  if(dir.lengthSq()>0){
+    dir.normalize();
+    dir.applyQuaternion(yawObject.quaternion);
+    dir.y = 0;
+    dir.normalize();
+    const newX = yawObject.position.x + dir.x*MOVE_SPEED*dt;
+    const newZ = yawObject.position.z + dir.z*MOVE_SPEED*dt;
+    const pos = new THREE.Vector3(newX, 0, newZ);
+    resolveBuildingCollision(pos);
+    yawObject.position.x = THREE.MathUtils.clamp(pos.x, -BOUNDS, BOUNDS);
+    yawObject.position.z = THREE.MathUtils.clamp(pos.z, -BOUNDS, BOUNDS);
+  }
+}
+
+function resolveBuildingCollision(pos){
+  BUILDINGS.forEach(b=>{
+    if(b.unlocked) return; // ya se puede entrar libremente
+    const dx = pos.x - b.cx, dz = pos.z - b.cz;
+    const dist = Math.sqrt(dx*dx+dz*dz);
+    if(dist < b.collisionRadius && dist > 0.0001){
+      const push = b.collisionRadius / dist;
+      pos.x = b.cx + dx*push;
+      pos.z = b.cz + dz*push;
+    }
+  });
+}
+
+function checkProximity(){
+  const interactBtn = document.getElementById('interactBtn');
+  if(panelOpen || quizOpen || doorChallengeOpen) {
+    document.getElementById('interactHint').style.display='none';
+    interactBtn.style.display='none';
+    return;
+  }
+  const p = yawObject.position;
+  const hint = document.getElementById('interactHint');
+  currentDoor = null; currentInterior = null; currentPOI = null;
+
+  // 1) puertas bloqueadas: máxima prioridad. El radio es generoso y se mide
+  //    desde el centro del edificio, así funciona sin importar de qué lado te acerques.
+  let nearestDoor = null, nearestDoorDist = Infinity;
+  BUILDINGS.forEach(b=>{
+    if(b.unlocked) return;
+    const dx = p.x - b.cx, dz = p.z - b.cz;
+    const dist = Math.sqrt(dx*dx+dz*dz);
+    const triggerRadius = b.collisionRadius + 2.6;
+    if(dist < triggerRadius && dist < nearestDoorDist){ nearestDoor = b; nearestDoorDist = dist; }
+  });
+  if(nearestDoor){
+    currentDoor = nearestDoor;
+    const poiData = POIS_DATA.find(x=>x.id===nearestDoor.id);
+    hint.style.display='block';
+    hint.textContent = 'Desafío para ingresar a "'+(poiData?poiData.name:nearestDoor.id)+'"';
+    interactBtn.style.display='flex';
+    interactBtn.textContent = '🔓 Intentar ingresar';
+    return;
+  }
+
+  // 2) interiores ya desbloqueados
+  let nearestInt = null, nearestIntDist = Infinity;
+  BUILDINGS.forEach(b=>{
+    if(!b.unlocked) return;
+    const dx = p.x - b.cx, dz = p.z - b.cz;
+    const dist = Math.sqrt(dx*dx+dz*dz);
+    const triggerRadius = b.collisionRadius + 2.6;
+    if(dist < triggerRadius && dist < nearestIntDist){ nearestInt = b; nearestIntDist = dist; }
+  });
+  if(nearestInt){
+    currentInterior = nearestInt;
+    hint.style.display='block';
+    hint.textContent = 'Ver el interior';
+    interactBtn.style.display='flex';
+    interactBtn.textContent = '🚪 Ver interior';
+    return;
+  }
+
+  // 3) carteles exteriores normales
+  let nearest = null, nearestDist = Infinity;
+  for(const poi of poiMeshes){
+    const dx = p.x - poi.pos.x, dz = p.z - poi.pos.z;
+    const dist = Math.sqrt(dx*dx+dz*dz);
+    if(dist < poi.radius && dist < nearestDist){
+      nearest = poi; nearestDist = dist;
+    }
+  }
+  if(nearest){
+    currentPOI = nearest;
+    const esNpc = (nearest.data.type==='npc');
+    hint.style.display = 'block';
+    hint.textContent = esNpc ? ('Hablar con "'+nearest.data.name+'"') : ('Leer el cartel de "'+nearest.data.name+'"');
+    interactBtn.style.display = 'flex';
+    interactBtn.textContent = esNpc ? '💬 Hablar' : '📜 Ver cartel';
+  } else {
+    hint.style.display = 'none';
+    interactBtn.style.display = 'none';
+  }
+}
+
+function handleInteract(){
+  if(doorChallengeOpen) return;
+  if(panelOpen){ closePOIPanel(); return; }
+  if(currentDoor){ openDoorChallenge(currentDoor); return; }
+  if(currentInterior){ openInteriorPanel(currentInterior); return; }
+  if(currentPOI){ openPOIPanel(currentPOI); return; }
+}
+
+document.getElementById('interactBtn').addEventListener('click', handleInteract);
+
+function openInteriorPanel(b){
+  panelOpen = true;
+  document.getElementById('poiYear').textContent = 'Interior desbloqueado';
+  document.getElementById('poiTitle').textContent = b.interior.title;
+  document.getElementById('poiText').textContent = b.interior.text;
+  document.getElementById('poiFuente').textContent = 'Superaste el desafío de la puerta para acceder a este relato.';
+  document.getElementById('poiPanel').style.display = 'flex';
+  document.getElementById('interactHint').style.display='none';
+  document.getElementById('interactBtn').style.display='none';
+}
+
+/* ============================================================
+   PANEL DE POI
+   ============================================================ */
+function openPOIPanel(poi){
+  if(!poi) return;
+  panelOpen = true;
+  const d = poi.data;
+  document.getElementById('poiYear').textContent = (d.type==='npc') ? 'Relato oral · '+d.year : d.year;
+  document.getElementById('poiTitle').textContent = d.name;
+  document.getElementById('poiText').textContent = d.text;
+  document.getElementById('poiFuente').textContent = d.fuente;
+  document.getElementById('poiPanel').style.display = 'flex';
+  if(!visitedSet.has(d.id)){
+    visitedSet.add(d.id);
+    document.getElementById('visitedCount').textContent = visitedSet.size;
+  }
+  document.getElementById('interactHint').style.display='none';
+  document.getElementById('interactBtn').style.display='none';
+}
+function closePOIPanel(){
+  panelOpen = false;
+  document.getElementById('poiPanel').style.display = 'none';
+}
+document.getElementById('poiClose').addEventListener('click', closePOIPanel);
+
+/* ============================================================
+   ENTRADA: TECLADO
+   ============================================================ */
+window.addEventListener('keydown', (e)=>{
+  switch(e.code){
+    case 'KeyW': case 'ArrowUp': moveState.forward = true; break;
+    case 'KeyS': case 'ArrowDown': moveState.backward = true; break;
+    case 'KeyA': case 'ArrowLeft': moveState.left = true; break;
+    case 'KeyD': case 'ArrowRight': moveState.right = true; break;
+    case 'KeyE':
+      handleInteract();
+      break;
+    case 'Escape':
+      if(panelOpen) closePOIPanel();
+      if(doorChallengeOpen) closeDoorChallenge();
+      break;
+  }
+});
+window.addEventListener('keyup', (e)=>{
+  switch(e.code){
+    case 'KeyW': case 'ArrowUp': moveState.forward = false; break;
+    case 'KeyS': case 'ArrowDown': moveState.backward = false; break;
+    case 'KeyA': case 'ArrowLeft': moveState.left = false; break;
+    case 'KeyD': case 'ArrowRight': moveState.right = false; break;
+  }
+});
+
+/* ============================================================
+   ENTRADA: MOUSE (pointer lock) — desktop
+   ============================================================ */
+const canvasEl = document.getElementById('c');
+canvasEl.addEventListener('click', ()=>{
+  if(!isTouch && !panelOpen && !quizOpen){
+    canvasEl.requestPointerLock = canvasEl.requestPointerLock || canvasEl.mozRequestPointerLock;
+    canvasEl.requestPointerLock();
+  }
+});
+document.addEventListener('pointerlockchange', ()=>{
+  pointerLocked = (document.pointerLockElement === canvasEl);
+  document.getElementById('desktopHint').style.display = pointerLocked ? 'none' : 'block';
+});
+document.addEventListener('mousemove', (e)=>{
+  if(!pointerLocked) return;
+  const dx = e.movementX || 0, dy = e.movementY || 0;
+  yawObject.rotation.y -= dx*0.0022;
+  pitchObject.rotation.x -= dy*0.0022;
+  pitchObject.rotation.x = THREE.MathUtils.clamp(pitchObject.rotation.x, -1.3, 1.3);
+});
+
+/* ============================================================
+   ENTRADA: TÁCTIL — celular
+   ============================================================ */
+function bindHold(el, key){
+  const set = (v)=>{ moveState[key]=v; el.classList.toggle('active', v); };
+  el.addEventListener('touchstart', (e)=>{ e.preventDefault(); set(true); }, {passive:false});
+  el.addEventListener('touchend', (e)=>{ e.preventDefault(); set(false); }, {passive:false});
+  el.addEventListener('touchcancel', ()=>set(false));
+  el.addEventListener('mousedown', ()=>set(true));
+  el.addEventListener('mouseup', ()=>set(false));
+  el.addEventListener('mouseleave', ()=>set(false));
+}
+bindHold(document.getElementById('dUp'),'forward');
+bindHold(document.getElementById('dDownReal'),'backward');
+bindHold(document.getElementById('dLeft'),'left');
+bindHold(document.getElementById('dRight'),'right');
+
+// arrastre para mirar
+const lookLayer = document.getElementById('lookLayer');
+let lastTouch = null;
+lookLayer.addEventListener('touchstart',(e)=>{
+  if(panelOpen||quizOpen) return;
+  lastTouch = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+},{passive:true});
+lookLayer.addEventListener('touchmove',(e)=>{
+  if(panelOpen||quizOpen || !lastTouch) return;
+  const t = e.touches[0];
+  const dx = t.clientX - lastTouch.x, dy = t.clientY - lastTouch.y;
+  yawObject.rotation.y -= dx*0.0032;
+  pitchObject.rotation.x -= dy*0.0032;
+  pitchObject.rotation.x = THREE.MathUtils.clamp(pitchObject.rotation.x, -1.3, 1.3);
+  lastTouch = {x:t.clientX, y:t.clientY};
+},{passive:true});
+lookLayer.addEventListener('touchend',()=>{ lastTouch=null; });
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+function openQuiz(){
+  quizOpen = true;
+  quizIndex = 0; quizScore = 0; quizAnswered = false;
+  document.getElementById('quizFinal').style.display='none';
+  document.getElementById('quizBody').style.display='block';
+  document.getElementById('quizOverlay').style.display='flex';
+  renderQuizQuestion();
+}
+function closeQuiz(){
+  quizOpen = false;
+  document.getElementById('quizOverlay').style.display='none';
+}
+function renderQuizQuestion(){
+  quizAnswered = false;
+  const q = QUIZ_DATA[quizIndex];
+  document.getElementById('quizProg').textContent = 'Pregunta '+(quizIndex+1)+' de '+QUIZ_DATA.length;
+  document.getElementById('quizQ').textContent = q.q;
+  const optsWrap = document.getElementById('quizOpts');
+  optsWrap.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className='quizOpt';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>answerQuiz(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('quizJust').style.display='none';
+  document.getElementById('quizNextBtn').style.display='none';
+}
+function answerQuiz(i){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const q = QUIZ_DATA[quizIndex];
+  const opts = document.querySelectorAll('.quizOpt');
+  opts.forEach((el,idx)=>{
+    if(idx===q.correct) el.classList.add('correct');
+    else if(idx===i) el.classList.add('wrong');
+  });
+  if(i===q.correct){
+    quizScore++;
+    updateScoreBadges();
+  }
+  document.getElementById('quizJust').textContent = q.just;
+  document.getElementById('quizJust').style.display='block';
+  document.getElementById('quizNextBtn').style.display='block';
+  document.getElementById('quizNextBtn').textContent = (quizIndex<QUIZ_DATA.length-1) ? 'Siguiente pregunta' : 'Ver puntaje final';
+}
+document.getElementById('quizNextBtn').addEventListener('click', ()=>{
+  quizIndex++;
+  if(quizIndex >= QUIZ_DATA.length){
+    showQuizFinal();
+  } else {
+    renderQuizQuestion();
+  }
+});
+function showQuizFinal(){
+  document.getElementById('quizBody').style.display='none';
+  document.getElementById('quizFinal').style.display='block';
+  document.getElementById('quizFinalScore').textContent = quizScore+'/'+QUIZ_DATA.length;
+  let msg = 'Gracias por recorrer la historia de la Chacra Experimental del INTA.';
+  if(quizScore===QUIZ_DATA.length) msg = '¡Puntaje perfecto! Conocés a fondo la historia de la Chacra Experimental.';
+  else if(quizScore>=3) msg = 'Muy buen resultado. Ya sabés bastante sobre la Chacra Experimental y su gente.';
+  else msg = 'Segui explorando los carteles del recorrido para conocer mejor esta historia.';
+  document.getElementById('quizFinalMsg').textContent = msg;
+}
+function updateScoreBadges(){
+  document.getElementById('scoreDesktop').textContent = quizScore;
+  document.getElementById('scoreMobile').textContent = quizScore;
+}
+document.getElementById('questBtnDesktop').addEventListener('click', openQuiz);
+document.getElementById('questBtnMobile').addEventListener('click', openQuiz);
+document.getElementById('quizCloseX').addEventListener('click', closeQuiz);
+document.getElementById('quizRestartBtn').addEventListener('click', closeQuiz);
+
+/* ============================================================
+   DESAFÍO DE PUERTA (para poder ingresar a cada edificio)
+   ============================================================ */
+let activeDoorBuilding = null;
+let doorAnswered = false;
+
+function openDoorChallenge(b){
+  doorChallengeOpen = true;
+  activeDoorBuilding = b;
+  doorAnswered = false;
+  document.getElementById('interactHint').style.display='none';
+  document.getElementById('interactBtn').style.display='none';
+  const poiData = POIS_DATA.find(p=>p.id===b.id);
+  document.getElementById('doorProg').textContent = 'Desafío para ingresar a "'+(poiData?poiData.name:b.id)+'"';
+  document.getElementById('doorQ').textContent = b.challenge.q;
+  const optsWrap = document.getElementById('doorOpts');
+  optsWrap.innerHTML = '';
+  b.challenge.opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'quizOpt';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>answerDoor(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('doorJust').style.display='none';
+  document.getElementById('doorNextBtn').style.display='none';
+  document.getElementById('doorOverlay').style.display='flex';
+}
+
+function answerDoor(i){
+  if(doorAnswered) return;
+  doorAnswered = true;
+  const b = activeDoorBuilding;
+  const opts = document.querySelectorAll('#doorOpts .quizOpt');
+  opts.forEach((el,idx)=>{
+    if(idx===b.challenge.correct) el.classList.add('correct');
+    else if(idx===i) el.classList.add('wrong');
+  });
+  document.getElementById('doorJust').textContent = b.challenge.just;
+  document.getElementById('doorJust').style.display='block';
+  const nextBtn = document.getElementById('doorNextBtn');
+  nextBtn.style.display = 'block';
+  if(i===b.challenge.correct){
+    nextBtn.textContent = 'Ingresar';
+    b.pendingUnlock = true;
+  } else {
+    nextBtn.textContent = 'Volver a intentar';
+    b.pendingUnlock = false;
+  }
+}
+
+document.getElementById('doorNextBtn').addEventListener('click', ()=>{
+  const b = activeDoorBuilding;
+  if(b && b.pendingUnlock){
+    unlockBuilding(b);
+    closeDoorChallenge();
+  } else if(b){
+    // reintentar la misma puerta
+    openDoorChallenge(b);
+  } else {
+    closeDoorChallenge();
+  }
+});
+
+function unlockBuilding(b){
+  if(b.unlocked) return;
+  b.unlocked = true;
+  buildingsUnlockedCount++;
+  document.getElementById('unlockedCount').textContent = buildingsUnlockedCount;
+  updateDoorIcon(b);
+}
+
+function closeDoorChallenge(){
+  doorChallengeOpen = false;
+  activeDoorBuilding = null;
+  document.getElementById('doorOverlay').style.display = 'none';
+}
+
+/* ============================================================
+   LOOP DE ANIMACIÓN
+   ============================================================ */
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  updateMovement(dt);
+  checkProximity();
+  updateVehicles(dt);
+  updateCottonPickers(clock.elapsedTime);
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   ARRANQUE
+   ============================================================ */
+/* ============================================================
+   SONIDO AMBIENTE: aves y voces de gente, generado por código
+   (sin archivos de audio externos, todo con Web Audio API)
+   ============================================================ */
+let audioCtx = null;
+let masterGain = null;
+let audioEnabled = true;
+let birdTimer = null;
+
+function initAmbientAudio(){
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.55;
+    masterGain.connect(audioCtx.destination);
+    scheduleBirdChirp();
+    startCrowdMurmur();
+  }catch(e){ /* audio no disponible: seguimos sin sonido */ }
+}
+
+function scheduleBirdChirp(){
+  const delay = 900 + Math.random()*2600;
+  birdTimer = setTimeout(()=>{
+    if(audioEnabled && audioCtx) playBirdChirp();
+    scheduleBirdChirp();
+  }, delay);
+}
+
+function playBirdChirp(){
+  const now = audioCtx.currentTime;
+  const notes = 1 + (Math.random()<0.35 ? 1 : 0); // a veces dos notas seguidas
+  for(let n=0;n<notes;n++){
+    const t0 = now + n*0.14;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const pan = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+    const baseFreq = 2200 + Math.random()*1400;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, t0);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq*1.5, t0+0.06);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq*0.85, t0+0.16);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.16, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+0.19);
+    if(pan){
+      pan.pan.value = (Math.random()*2-1);
+      osc.connect(g); g.connect(pan); pan.connect(masterGain);
+    } else {
+      osc.connect(g); g.connect(masterGain);
+    }
+    osc.start(t0);
+    osc.stop(t0+0.22);
+  }
+}
+
+function startCrowdMurmur(){
+  const bufferSize = audioCtx.sampleRate*2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1)*0.6;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 550;
+  filter.Q.value = 0.7;
+  const murmurGain = audioCtx.createGain();
+  murmurGain.gain.value = 0.05;
+  // LFO que hace variar el filtro para simular voces conversando
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 0.35;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 160;
+  lfo.connect(lfoGain);
+  lfoGain.connect(filter.frequency);
+  lfo.start();
+  noise.connect(filter);
+  filter.connect(murmurGain);
+  murmurGain.connect(masterGain);
+  noise.start();
+}
+
+function toggleAmbientAudio(){
+  audioEnabled = !audioEnabled;
+  document.getElementById('soundToggleBtn').textContent = audioEnabled ? '🔊' : '🔇';
+  if(masterGain){
+    masterGain.gain.value = audioEnabled ? 0.55 : 0;
+  }
+  if(audioCtx){
+    if(audioEnabled) audioCtx.resume(); 
+  }
+}
+document.getElementById('soundToggleBtn').addEventListener('click', toggleAmbientAudio);
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  const authorInput = document.getElementById('authorInput').value.trim();
+  const author = authorInput || 'Anónimo/a';
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('hud').classList.add('active');
+  if(isTouch){
+    document.getElementById('mobileControls').classList.add('active');
+    document.getElementById('desktopHint').style.display='none';
+    document.getElementById('questBtnDesktop').style.display='none';
+    document.getElementById('soundToggleBtn').style.right='16px';
+  } else {
+    document.getElementById('questBtnMobile').style.display='none';
+  }
+  document.title = 'INTA · La Semilla del Sur — guion de ' + author;
+  initScene();
+  initAmbientAudio();
+  animate();
+});
+
+})();
+</script>
+</body>
+</html>
